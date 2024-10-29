@@ -1,0 +1,119 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Bose Predictive Maintenance System'
+
+Parameters:
+  HealthDataBucketName:
+    Type: String
+    Description: Name of the S3 bucket for ingesting Bose device health data
+
+  HealthMetricsTableName:
+    Type: String
+    Description: Name of the DynamoDB table for storing Bose device health metrics
+
+  MaintenanceAlertTopicName:
+    Type: String
+    Description: Name of the SNS topic for sending maintenance alerts
+
+Resources:
+  BoseHealthDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref HealthDataBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  BoseHealthMetricsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref HealthMetricsTableName
+      AttributeDefinitions:
+        - AttributeName: productId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: productId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  MaintenanceAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Ref MaintenanceAlertTopicName
+
+  HealthDataProcessorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-health-data-processor'
+      Handler: index.handler
+      Role: !GetAtt HealthDataProcessorRole.Arn
+      Code:
+        ZipFile: |
+          def handler(event, context):
+              print("Health data processor invoked")
+              return {'statusCode': 200, 'body': 'Health data processed successfully'}
+      Runtime: python3.8
+      Timeout: 60
+      Environment:
+        Variables:
+          HEALTH_METRICS_TABLE: !Ref BoseHealthMetricsTable
+          ALERT_TOPIC_ARN: !Ref MaintenanceAlertTopic
+
+  HealthDataProcessorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: HealthDataAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub '${BoseHealthDataBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource: !GetAtt BoseHealthMetricsTable.Arn
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref MaintenanceAlertTopic
+
+  HealthDataBucketNotification:
+    Type: AWS::S3::BucketNotification
+    Properties:
+      Bucket: !Ref BoseHealthDataBucket
+      LambdaConfigurations:
+        - Event: s3:ObjectCreated:*
+          Function: !GetAtt HealthDataProcessorFunction.Arn
+
+Outputs:
+  HealthDataBucketName:
+    Description: Name of the S3 bucket for Bose device health data ingestion
+    Value: !Ref BoseHealthDataBucket
+
+  HealthMetricsTableName:
+    Description: Name of the DynamoDB table for Bose device health metrics
+    Value: !Ref BoseHealthMetricsTable
+
+  MaintenanceAlertTopicArn:
+    Description: ARN of the SNS topic for Bose device maintenance alerts
+    Value: !Ref MaintenanceAlertTopic
+
+  HealthDataProcessorFunctionName:
+    Description: Name of the Lambda function for processing Bose health data
+    Value: !Ref HealthDataProcessorFunction
