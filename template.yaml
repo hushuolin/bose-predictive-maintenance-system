@@ -14,6 +14,14 @@ Parameters:
     Type: String
     Description: Name of the SNS topic for sending maintenance alerts
 
+  LambdaCodeS3Bucket:
+    Type: String
+    Description: S3 bucket containing the Lambda function code
+
+  LambdaCodeS3Key:
+    Type: String
+    Description: S3 key for the Lambda function code
+
 Resources:
   BoseHealthDataBucket:
     Type: AWS::S3::Bucket
@@ -52,16 +60,22 @@ Resources:
       Handler: index.handler
       Role: !GetAtt HealthDataProcessorRole.Arn
       Code:
-        ZipFile: |
-          def handler(event, context):
-              print("Health data processor invoked")
-              return {'statusCode': 200, 'body': 'Health data processed successfully'}
+        S3Bucket: !Ref LambdaCodeS3Bucket
+        S3Key: !Ref LambdaCodeS3Key
       Runtime: python3.8
       Timeout: 60
       Environment:
         Variables:
           HEALTH_METRICS_TABLE: !Ref BoseHealthMetricsTable
           ALERT_TOPIC_ARN: !Ref MaintenanceAlertTopic
+
+  HealthDataProcessorPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HealthDataProcessorFunction
+      Action: 'lambda:InvokeFunction'
+      Principal: 's3.amazonaws.com'
+      SourceArn: !GetAtt BoseHealthDataBucket.Arn
 
   HealthDataProcessorRole:
     Type: AWS::IAM::Role
@@ -93,14 +107,6 @@ Resources:
                   - sns:Publish
                 Resource: !Ref MaintenanceAlertTopic
 
-  HealthDataBucketNotification:
-    Type: AWS::S3::BucketNotification
-    Properties:
-      Bucket: !Ref BoseHealthDataBucket
-      LambdaConfigurations:
-        - Event: s3:ObjectCreated:*
-          Function: !GetAtt HealthDataProcessorFunction.Arn
-
 Outputs:
   HealthDataBucketName:
     Description: Name of the S3 bucket for Bose device health data ingestion
@@ -114,6 +120,6 @@ Outputs:
     Description: ARN of the SNS topic for Bose device maintenance alerts
     Value: !Ref MaintenanceAlertTopic
 
-  HealthDataProcessorFunctionName:
-    Description: Name of the Lambda function for processing Bose health data
-    Value: !Ref HealthDataProcessorFunction
+  HealthDataProcessorFunctionArn:
+    Description: ARN of the Lambda function for processing Bose health data
+    Value: !GetAtt HealthDataProcessorFunction.Arn
