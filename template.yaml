@@ -53,6 +53,13 @@ Resources:
     Properties:
       TopicName: !Ref MaintenanceAlertTopicName
 
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref MaintenanceAlertTopic
+      Endpoint: hu.shuo@northeastern.edu
+      Protocol: email
+
   HealthDataProcessorFunction:
     Type: AWS::Lambda::Function
     Properties:
