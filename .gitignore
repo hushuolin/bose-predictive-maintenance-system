@@ -1,0 +1,90 @@
+# Byte-compiled Python files
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environment directories
+venv/
+env/
+.venv/
+ENV/
+.env/
+env.bak/
+venv.bak/
+
+# AWS SAM related
+.aws-sam/
+
+# Serverless Framework related
+.serverless/
+
+# IDE-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Unit test / coverage reports
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+htmlcov/
+.tox/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Distribution / packaging
+build/
+dist/
+downloads/
+*.egg-info/
+.eggs/
+wheels/
+*.egg
+.installed.cfg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PyInstaller
+*.spec
+*.manifest
+
+# Python profiling/debugging
+*.prof
+cython_debug/
+
+# Type-checking tools
+.mypy_cache/
+.pyre/
+.pytype/
+.dmypy.json
+
+# Node (for projects with JavaScript tools)
+node_modules/
+
+# Local config files
+*.env
+config.ini
+secrets.json
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
