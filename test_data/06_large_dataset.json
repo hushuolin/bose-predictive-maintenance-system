@@ -1,0 +1,39 @@
+[
+    {
+      "productId": "device101",
+      "batteryLevel": 0.6,
+      "temperature": 32,
+      "timestamp": 1698600000
+    },
+    {
+      "productId": "device102",
+      "batteryLevel": 0.3,
+      "temperature": 40,
+      "timestamp": 1698600100
+    },
+    {
+      "productId": "device103",
+      "batteryLevel": 0.95,
+      "temperature": 29,
+      "timestamp": 1698600200
+    },
+    {
+      "productId": "device104",
+      "batteryLevel": 0.04,
+      "temperature": 55,
+      "timestamp": 1698600300
+    },
+    {
+      "productId": "device105",
+      "batteryLevel": 0.85,
+      "temperature": 28,
+      "timestamp": 1698600400
+    },
+    {
+      "productId": "device106",
+      "batteryLevel": 0.2,
+      "temperature": 50,
+      "timestamp": 1698600500
+    }
+  ]
+  

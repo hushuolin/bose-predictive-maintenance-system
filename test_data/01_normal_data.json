@@ -1,0 +1,14 @@
+[
+  {
+    "productId": "device001",
+    "batteryLevel": 0.9,
+    "temperature": 30,
+    "timestamp": 1698598400
+  },
+  {
+    "productId": "device002",
+    "batteryLevel": 0.7,
+    "temperature": 25,
+    "timestamp": 1698598500
+  }
+]

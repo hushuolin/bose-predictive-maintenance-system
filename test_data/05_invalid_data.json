@@ -1,0 +1,9 @@
+[
+    {
+      "productId": "device005",
+      "batteryLevel": "low",
+      "temperature": "hot",
+      "timestamp": "invalid_timestamp"
+    }
+  ]
+  
