@@ -62,8 +62,8 @@ Resources:
       Code:
         S3Bucket: !Ref LambdaCodeS3Bucket
         S3Key: !Ref LambdaCodeS3Key
-      Runtime: python3.8
-      Timeout: 60
+      Runtime: python3.10
+      Timeout: 120
       Environment:
         Variables:
           HEALTH_METRICS_TABLE: !Ref BoseHealthMetricsTable

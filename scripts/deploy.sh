@@ -7,10 +7,10 @@ REGION="us-east-1"
 DEPLOYMENT_BUCKET="bose-deployment-artifacts-742465305217"
 
 # Package the Lambda function
-zip -j lambda.zip lambda/index.py
+zip -j lambda_functions.zip lambda_functions/index.py
 
 # Upload the Lambda package to S3
-aws s3 cp lambda.zip s3://$DEPLOYMENT_BUCKET/lambda.zip
+aws s3 cp lambda_functions.zip s3://$DEPLOYMENT_BUCKET/lambda_functions.zip
 
 # Check if the stack exists
 if aws cloudformation describe-stacks --stack-name $STACK_NAME --region $REGION &> /dev/null; then
@@ -43,7 +43,7 @@ aws cloudformation create-change-set \
         ParameterKey=HealthMetricsTableName,ParameterValue=bose-health-metrics \
         ParameterKey=MaintenanceAlertTopicName,ParameterValue=bose-maintenance-alerts \
         ParameterKey=LambdaCodeS3Bucket,ParameterValue=$DEPLOYMENT_BUCKET \
-        ParameterKey=LambdaCodeS3Key,ParameterValue=lambda.zip
+        ParameterKey=LambdaCodeS3Key,ParameterValue=lambda_functions.zip
 
 # Wait for change set creation to complete
 echo "Waiting for change set creation to complete..."
@@ -105,4 +105,4 @@ else
 fi
 
 # Clean up local files
-rm lambda.zip
+rm lambda_functions.zip
