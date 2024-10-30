@@ -21,7 +21,8 @@ class TestLambdaFunction(unittest.TestCase):
                 }
             ]
         }
-        context = {}
+        context = MagicMock()
+        context.get_remaining_time_in_millis.return_value = 30000
 
         # Mock the S3 get_object response
         mock_s3.get_object.return_value = {
@@ -34,8 +35,10 @@ class TestLambdaFunction(unittest.TestCase):
             ]).encode('utf-8'))
         }
 
-        # Mock DynamoDB Table
+        # Mock DynamoDB Table and Batch Writer
         mock_table = MagicMock()
+        mock_batch_writer = MagicMock()
+        mock_table.batch_writer.return_value.__enter__.return_value = mock_batch_writer
         mock_dynamodb.Table.return_value = mock_table
 
         # Call the handler
@@ -48,9 +51,9 @@ class TestLambdaFunction(unittest.TestCase):
         # Verify S3 get_object was called
         mock_s3.get_object.assert_called_once_with(Bucket='test-bucket', Key='test-key')
 
-        # Verify DynamoDB put_item was called
-        mock_table.put_item.assert_called_once()
-        put_item_args = mock_table.put_item.call_args[1]
+        # Verify DynamoDB put_item was called using batch_writer
+        mock_batch_writer.put_item.assert_called_once()
+        put_item_args = mock_batch_writer.put_item.call_args[1]
         self.assertEqual(put_item_args['Item']['productId'], 'test-product')
         self.assertEqual(put_item_args['Item']['batteryLevel'], 0.5)
         self.assertEqual(put_item_args['Item']['temperature'], 25)
@@ -73,7 +76,8 @@ class TestLambdaFunction(unittest.TestCase):
                 }
             ]
         }
-        context = {}
+        context = MagicMock()
+        context.get_remaining_time_in_millis.return_value = 30000
 
         # Mock the S3 get_object response with anomalous data
         mock_s3.get_object.return_value = {
@@ -86,8 +90,10 @@ class TestLambdaFunction(unittest.TestCase):
             ]).encode('utf-8'))
         }
 
-        # Mock DynamoDB Table
+        # Mock DynamoDB Table and Batch Writer
         mock_table = MagicMock()
+        mock_batch_writer = MagicMock()
+        mock_table.batch_writer.return_value.__enter__.return_value = mock_batch_writer
         mock_dynamodb.Table.return_value = mock_table
 
         # Mock SNS publish
@@ -103,8 +109,8 @@ class TestLambdaFunction(unittest.TestCase):
         # Verify S3 get_object was called
         mock_s3.get_object.assert_called_once_with(Bucket='test-bucket', Key='test-key')
 
-        # Verify DynamoDB put_item was called
-        mock_table.put_item.assert_called_once()
+        # Verify DynamoDB put_item was called using batch_writer
+        mock_batch_writer.put_item.assert_called_once()
 
         # Verify SNS publish was called
         mock_sns.publish.assert_called_once()
