@@ -108,6 +108,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - dynamodb:PutItem
+                  - dynamodb:BatchWriteItem
                 Resource: !GetAtt BoseHealthMetricsTable.Arn
               - Effect: Allow
                 Action:

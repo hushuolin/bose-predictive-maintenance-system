@@ -3,6 +3,7 @@ import boto3
 import os
 import logging
 from botocore.exceptions import ClientError
+from decimal import Decimal  # Import Decimal for DynamoDB compatibility
 
 # Set up logging
 logger = logging.getLogger()
@@ -34,7 +35,7 @@ def handler(event, context):
             
             # Parse JSON content
             try:
-                health_data = json.loads(file_content)
+                health_data = json.loads(file_content, parse_float=Decimal)  # Use Decimal for float values
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON from S3 object: {e}")
                 return {'statusCode': 400, 'body': 'Invalid JSON format in S3 object'}
@@ -69,6 +70,9 @@ def process_health_data(health_data):
     try:
         with table.batch_writer() as batch:
             for item in health_data:
+                # Convert float values to Decimal for DynamoDB
+                item = {k: (Decimal(str(v)) if isinstance(v, float) else v) for k, v in item.items()}
+                
                 # Store in DynamoDB using batch writer
                 batch.put_item(Item=item)
 
@@ -83,7 +87,7 @@ def process_health_data(health_data):
 def check_for_anomalies(item):
     # Implement your anomaly detection logic here
     # For example, check if battery level is too low or temperature is too high
-    return item.get('batteryLevel', 1) < 0.1 or item.get('temperature', 0) > 50
+    return item.get('batteryLevel', Decimal(1)) < Decimal('0.1') or item.get('temperature', Decimal(0)) > Decimal('50')
 
 def send_alert(item, topic_arn):
     message = f"Alert for product {item.get('productId', 'Unknown')}: Battery level: {item.get('batteryLevel', 'N/A')}, Temperature: {item.get('temperature', 'N/A')}"
