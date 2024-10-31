@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'S3 Bucket for Bose Predictive Maintenance System'
+
+Resources:
+  BoseHealthDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'bose-health-data-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+Outputs:
+  BoseHealthDataBucketName:
+    Description: Name of the S3 bucket for health data ingestion
+    Value: !Ref BoseHealthDataBucket
+    Export:
+      Name: BoseHealthDataBucketName

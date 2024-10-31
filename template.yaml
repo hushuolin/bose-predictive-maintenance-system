@@ -2,10 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Bose Predictive Maintenance System'
 
 Parameters:
-  HealthDataBucketName:
-    Type: String
-    Description: Name of the S3 bucket for ingesting Bose device health data
-
   HealthMetricsTableName:
     Type: String
     Description: Name of the DynamoDB table for storing Bose device health metrics
@@ -22,16 +18,11 @@ Parameters:
     Type: String
     Description: S3 key for the Lambda function code
 
-Resources:
-  BoseHealthDataBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref HealthDataBucketName
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
+  HealthDataBucketArn:
+    Type: String
+    Description: ARN of the S3 bucket for ingesting Bose device health data
 
+Resources:
   BoseHealthMetricsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -75,6 +66,7 @@ Resources:
         Variables:
           HEALTH_METRICS_TABLE: !Ref BoseHealthMetricsTable
           ALERT_TOPIC_ARN: !Ref MaintenanceAlertTopic
+          HEALTH_DATA_BUCKET: !Ref HealthDataBucketArn
 
   HealthDataProcessorPermission:
     Type: AWS::Lambda::Permission
@@ -82,7 +74,7 @@ Resources:
       FunctionName: !Ref HealthDataProcessorFunction
       Action: 'lambda:InvokeFunction'
       Principal: 's3.amazonaws.com'
-      SourceArn: !GetAtt BoseHealthDataBucket.Arn
+      SourceArn: !Ref HealthDataBucketArn
 
   HealthDataProcessorRole:
     Type: AWS::IAM::Role
@@ -104,7 +96,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:GetObject
-                Resource: !Sub '${BoseHealthDataBucket.Arn}/*'
+                Resource: !Sub '${HealthDataBucketArn}/*'
               - Effect: Allow
                 Action:
                   - dynamodb:PutItem
@@ -116,10 +108,6 @@ Resources:
                 Resource: !Ref MaintenanceAlertTopic
 
 Outputs:
-  HealthDataBucketName:
-    Description: Name of the S3 bucket for Bose device health data ingestion
-    Value: !Ref BoseHealthDataBucket
-
   HealthMetricsTableName:
     Description: Name of the DynamoDB table for Bose device health metrics
     Value: !Ref BoseHealthMetricsTable

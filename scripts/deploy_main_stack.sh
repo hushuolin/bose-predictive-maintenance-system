@@ -5,14 +5,29 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 STACK_NAME="bose-predictive-maintenance"
 REGION="us-east-1"
 DEPLOYMENT_BUCKET="bose-deployment-artifacts-742465305217"
+LAMBDA_ZIP="lambda_functions.zip"
+LAMBDA_FUNCTION_FILE="lambda_functions/index.py"
+HEALTH_DATA_BUCKET_ARN="arn:aws:s3:::bose-health-data-742465305217"  # Set your S3 bucket ARN here
 
 # Package the Lambda function
-zip -j lambda_functions.zip lambda_functions/index.py
+if [ -f "$LAMBDA_ZIP" ]; then
+    rm $LAMBDA_ZIP  # Remove existing zip file if it exists
+fi
+zip -j $LAMBDA_ZIP $LAMBDA_FUNCTION_FILE
 
 # Upload the Lambda package to S3
-aws s3 cp lambda_functions.zip s3://$DEPLOYMENT_BUCKET/lambda_functions.zip
+aws s3 cp $LAMBDA_ZIP s3://$DEPLOYMENT_BUCKET/$LAMBDA_ZIP
 
-# Check if the stack exists
+# Validate the CloudFormation template
+echo "Validating CloudFormation template..."
+VALIDATION_OUTPUT=$(aws cloudformation validate-template --template-body file://template.yaml 2>&1)
+if [ $? -ne 0 ]; then
+    echo "Template validation failed:"
+    echo "$VALIDATION_OUTPUT"
+    exit 1
+fi
+
+# Check if the main stack exists
 if aws cloudformation describe-stacks --stack-name $STACK_NAME --region $REGION &> /dev/null; then
     STACK_EXISTS=true
 else
@@ -28,7 +43,7 @@ else
     CHANGE_SET_TYPE="CREATE"
 fi
 
-# Create a change set
+# Create a change set for the main stack
 echo "Creating change set for stack $ACTION..."
 CHANGE_SET_NAME="changeset-$(date +%Y%m%d%H%M%S)"
 aws cloudformation create-change-set \
@@ -39,11 +54,11 @@ aws cloudformation create-change-set \
     --capabilities CAPABILITY_IAM \
     --region $REGION \
     --parameters \
-        ParameterKey=HealthDataBucketName,ParameterValue=bose-health-data-$(date +%Y%m%d%H%M%S) \
         ParameterKey=HealthMetricsTableName,ParameterValue=bose-health-metrics \
         ParameterKey=MaintenanceAlertTopicName,ParameterValue=bose-maintenance-alerts \
         ParameterKey=LambdaCodeS3Bucket,ParameterValue=$DEPLOYMENT_BUCKET \
-        ParameterKey=LambdaCodeS3Key,ParameterValue=lambda_functions.zip
+        ParameterKey=LambdaCodeS3Key,ParameterValue=$LAMBDA_ZIP \
+        ParameterKey=HealthDataBucketArn,ParameterValue=$HEALTH_DATA_BUCKET_ARN
 
 # Wait for change set creation to complete
 echo "Waiting for change set creation to complete..."
@@ -83,14 +98,18 @@ then
 
     echo "Stack $ACTION completed successfully."
 
-    # Get the S3 bucket name and Lambda function ARN from the stack outputs
-    S3_BUCKET=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query "Stacks[0].Outputs[?OutputKey=='HealthDataBucketName'].OutputValue" --output text --region $REGION)
+    # Get the Lambda function ARN from the stack outputs
     LAMBDA_ARN=$(aws cloudformation describe-stacks --stack-name $STACK_NAME --query "Stacks[0].Outputs[?OutputKey=='HealthDataProcessorFunctionArn'].OutputValue" --output text --region $REGION)
+
+    if [ -z "$LAMBDA_ARN" ]; then
+        echo "Error: Unable to retrieve LAMBDA_ARN. Please check the stack outputs."
+        exit 1
+    fi
 
     # Set up S3 event notification
     echo "Setting up S3 event notification..."
     aws s3api put-bucket-notification-configuration \
-        --bucket $S3_BUCKET \
+        --bucket $(echo $HEALTH_DATA_BUCKET_ARN | cut -d':' -f6) \
         --notification-configuration '{
             "LambdaFunctionConfigurations": [{
                 "LambdaFunctionArn": "'"$LAMBDA_ARN"'",
@@ -105,4 +124,4 @@ else
 fi
 
 # Clean up local files
-rm lambda_functions.zip
+rm $LAMBDA_ZIP
