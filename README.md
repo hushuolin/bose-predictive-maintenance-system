@@ -4,6 +4,16 @@
 
 The **Bose Predictive Maintenance System** is a serverless solution built using **AWS** services to enhance the reliability of Bose products. The system provides real-time monitoring, predictive maintenance alerts, and anomaly detection to proactively identify potential issues.
 
+## Architecture Diagram
+
+![Bose Predictive Maintenance System Architecture](architecture.png)
+
+## Technologies Used
+
+- **AWS Services**: S3, Lambda, DynamoDB, SNS, CloudWatch
+- **Programming Language**: Python 3.10
+- **Infrastructure as Code**: AWS CloudFormation YAML
+
 ## Key Features
 
 - **Real-Time Processing**: Processes device health data in near real-time for prompt issue detection.
@@ -12,17 +22,7 @@ The **Bose Predictive Maintenance System** is a serverless solution built using 
 - **Infrastructure as Code**: Manages the infrastructure using AWS CloudFormation for easy deployment and reproducibility.
 - **Automated Alerts**: Sends notifications through Amazon SNS to inform the maintenance team of potential issues.
 
-## Technologies Used
-
-- **AWS Services**: S3, Lambda, DynamoDB, SNS, CloudWatch
-- **Programming Language**: Python 3.10
-- **Infrastructure as Code**: AWS CloudFormation YAML
-
 ## System Architecture
-
-### Architecture Diagram
-
-![Bose Predictive Maintenance System Architecture](architecture.png)
 
 ### Component Overview
 
